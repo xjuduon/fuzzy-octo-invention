@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>流星雨 · 许愿</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at 30% 30%, #0b1a2e, #03070f);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Roboto, sans-serif;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .star-field {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .hint {
+            position: relative;
+            z-index: 2;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: clamp(0.9rem, 3vw, 1.4rem);
+            letter-spacing: 2px;
+            text-align: center;
+            padding: 1.5rem 3rem;
+            border-radius: 60px;
+            background: rgba(10, 20, 40, 0.25);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 240, 200, 0.15);
+            box-shadow: 0 0 40px rgba(0, 180, 255, 0.1);
+            animation: breathe 4s infinite alternate ease-in-out;
+            pointer-events: none;
+            user-select: none;
+            font-weight: 300;
+            text-shadow: 0 0 12px rgba(255, 255, 200, 0.3);
+        }
+
+        @keyframes breathe {
+            0% { opacity: 0.6; transform: scale(0.98); }
+            100% { opacity: 1; transform: scale(1.02); }
+        }
+
+        .click-hint {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.25);
+            font-size: 0.85rem;
+            z-index: 2;
+            pointer-events: none;
+            letter-spacing: 2px;
+            animation: fadeHint 3s infinite alternate ease-in-out;
+        }
+
+        @keyframes fadeHint {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+    <div class="star-field" id="starField"></div>
+    <canvas id="meteorCanvas"></canvas>
+    <div class="hint">✨ 流星划过，许个愿吧 ✨</div>
+    <div class="click-hint">轻点屏幕，流星降临 · 许愿成真</div>
+
+    <script>
+        (function() {
+            const canvas = document.getElementById('meteorCanvas');
+            const ctx = canvas.getContext('2d');
+
+            let meteors = [];
+            let wishes = [];   // 许愿文字数组
+
+            let width = 0, height = 0;
+            let dpr = window.devicePixelRatio || 1;
+
+            // 愿望语录库
+            const WISH_TEXTS = [
+                '愿你所愿皆成真',
+                '平安喜乐',
+                '万事胜意',
+                '前程似锦',
+                '岁岁平安',
+                '心想事成',
+                '愿你被世界温柔以待',
+                '星河滚烫，你是人间理想',
+                '所念皆星河',
+                '愿有人陪你颠沛流离',
+                '暴富暴瘦变美',
+                '一夜好梦',
+                '愿你眼里有光',
+                '所行皆坦途',
+                '喜乐长安',
+                '愿时光不负努力',
+                '诸事顺遂',
+                '一世安稳',
+                '星光不问赶路人',
+                '愿你不负韶华',
+                '得偿所愿',
+                '万事顺意',
+                '愿你笑口常开',
+                '山河远阔，人间烟火',
+                '愿所有美好如期而至',
+                '发光发亮',
+                '平安顺遂',
+                '所遇皆温柔',
+                '愿有人懂你悲欢',
+                '未来可期'
+            ];
+
+            const CONFIG = {
+                minMeteors: 12,
+                maxMeteors: 65,
+                baseSpeed: 4.5,
+                speedVariance: 3.2,
+                minLength: 80,
+                maxLength: 280,
+                glowSize: 2.5,
+                newMeteorProbability: 0.018,
+                clickBurst: 10
+            };
+
+            // ---------- 调整画布 ----------
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width * dpr;
+                canvas.height = height * dpr;
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            }
+
+            // ---------- 静态星星 ----------
+            function generateStaticStars() {
+                const starField = document.getElementById('starField');
+                if (!starField) return;
+                const starCount = 200;
+                let shadows = [];
+                for (let i = 0; i < starCount; i++) {
+                    const x = Math.floor(Math.
